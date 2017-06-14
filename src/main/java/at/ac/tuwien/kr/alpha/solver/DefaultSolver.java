@@ -63,6 +63,7 @@ public class DefaultSolver extends AbstractSolver {
 	private final BranchingHeuristic fallbackBranchingHeuristic;
 	private final ChoiceManager choiceManager;
 	private final SolverCounters counters = new SolverCounters();
+	private final GlueForgetting forgetting = new GlueForgetting();
 
 	private boolean initialize = true;
 	private boolean didChange;
@@ -129,6 +130,7 @@ public class DefaultSolver extends AbstractSolver {
 			if (conflictCause != null) {
 				// Learn from conflict.
 				NoGood violatedNoGood = conflictCause.getViolatedNoGood();
+				forgetting.incrementConflictCounter();
 				if (LOGGER.isDebugEnabled()) {
 					LOGGER.debug("NoGood violated ({}) by wrong choices ({} violated): {}", grounder.noGoodToString(violatedNoGood), choiceStack);
 				}
@@ -148,6 +150,9 @@ public class DefaultSolver extends AbstractSolver {
 						counters.log();
 						return false;
 					}
+				}
+				if (forgetting.timeForForgetting()) {
+					forgetting.reduceLearntNoGoods();
 				}
 			} else if (!propagationFixpointReached()) {
 				// Ask the grounder for new NoGoods, then propagate (again).
