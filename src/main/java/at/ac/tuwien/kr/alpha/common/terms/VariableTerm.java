@@ -105,4 +105,8 @@ public class VariableTerm extends Term {
 			return renamedVariable;
 		}
 	}
+
+	public String getVariableName() {
+		return this.variableName;
+	}
 }

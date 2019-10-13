@@ -1,0 +1,6 @@
+  330 I tuwien.kr.alpha.Main Not writing dependency or component graphs, starting preprocessing... 
+  337 I uwien.kr.alpha.Alpha Preprocessing InternalProgram! 
+Answer set 1:
+{ blue(3), blue(5), blue(7), green(1), green(2), green(4), link(0, 2), link(0, 3), link(0, 4), link(1, 3), link(1, 5), link(1, 7), link(1, 8), link(2, 0), link(2, 3), link(2, 6), link(2, 7), link(2, 9), link(3, 0), link(3, 1), link(3, 2), link(3, 6), link(3, 8), link(4, 0), link(4, 5), link(5, 1), link(5, 4), link(5, 8), link(5, 9), link(6, 2), link(6, 3), link(6, 7), link(7, 1), link(7, 2), link(7, 6), link(7, 8), link(8, 1), link(8, 3), link(8, 5), link(8, 7), link(9, 2), link(9, 5), node(0), node(1), node(2), node(3), node(4), node(5), node(6), node(7), node(8), node(9), red(0), red(6), red(8), red(9) }
+SATISFIABLE
+TIME-STATS	java -jar Alpha-bundled.jar -n 1 -i test-src/3col-10-18.asp	0.52	0

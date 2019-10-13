@@ -1,0 +1,23 @@
+ 5612 I tuwien.kr.alpha.Main Not writing dependency or component graphs, starting preprocessing... 
+ 6656 I uwien.kr.alpha.Alpha Preprocessing InternalProgram! 
+18258 I solver.DefaultSolver Decisions in 11.579s: 0 
+18264 I solver.DefaultSolver Overall performance: 0 decisions in 11.579s or 0.0 decisions per sec. Overall replayed assignments: 0. 
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space
+	at at.ac.tuwien.kr.alpha.solver.NoGoodStoreAlphaRoaming$BinaryWatchList.<init>(NoGoodStoreAlphaRoaming.java:611)
+	at at.ac.tuwien.kr.alpha.solver.NoGoodStoreAlphaRoaming$BinaryWatchList.<init>(NoGoodStoreAlphaRoaming.java:608)
+	at at.ac.tuwien.kr.alpha.solver.NoGoodStoreAlphaRoaming.growForMaxAtomId(NoGoodStoreAlphaRoaming.java:118)
+	at at.ac.tuwien.kr.alpha.solver.DefaultSolver.ingest(DefaultSolver.java:461)
+	at at.ac.tuwien.kr.alpha.solver.DefaultSolver.tryAdvance(DefaultSolver.java:191)
+	at at.ac.tuwien.kr.alpha.solver.AbstractSolver$1.tryAdvance(AbstractSolver.java:34)
+	at java.base/java.util.stream.ReferencePipeline.forEachWithCancel(ReferencePipeline.java:127)
+	at java.base/java.util.stream.AbstractPipeline.copyIntoWithCancel(AbstractPipeline.java:502)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:488)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:474)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:497)
+	at at.ac.tuwien.kr.alpha.Main.computeAndConsumeAnswerSets(Main.java:141)
+	at at.ac.tuwien.kr.alpha.Main.main(Main.java:124)
+Command exited with non-zero status 1
+TIME-STATS	java -jar Alpha-bundled.jar -nse -n 1 -i test-src/reach-4.asp	91.13	1

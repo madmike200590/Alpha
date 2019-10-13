@@ -22,6 +22,7 @@ import at.ac.tuwien.kr.alpha.common.program.impl.AnalyzedProgram;
 import at.ac.tuwien.kr.alpha.common.program.impl.InputProgram;
 import at.ac.tuwien.kr.alpha.common.program.impl.InternalProgram;
 import at.ac.tuwien.kr.alpha.common.program.impl.NormalProgram;
+import at.ac.tuwien.kr.alpha.grounder.transformation.eval.PartialEvaluation;
 import at.ac.tuwien.kr.alpha.test.util.TestUtils;
 
 @RunWith(Parameterized.class)

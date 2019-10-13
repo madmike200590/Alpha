@@ -1,0 +1,25 @@
+dummy	cmd	_secs	exit_code
+TIME-STATS	java -jar Alpha-bundled.jar -n 1 -i test-src/3col-10-18.asp	0.52	0
+TIME-STATS	java -jar Alpha-bundled.jar -nse -n 1 -i test-src/3col-10-18.asp	0.60	0
+TIME-STATS	clingo -n 1 test-src/3col-10-18.asp	0.00	10
+TIME-STATS	java -jar Alpha-bundled.jar -n 1 -i test-src/3col-20-38.asp	0.82	0
+TIME-STATS	java -jar Alpha-bundled.jar -nse -n 1 -i test-src/3col-20-38.asp	0.63	0
+TIME-STATS	clingo -n 1 test-src/3col-20-38.asp	0.00	10
+TIME-STATS	java -jar Alpha-bundled.jar -n 1 -i test-src/cutedge-100-30.asp	1.68	0
+TIME-STATS	java -jar Alpha-bundled.jar -nse -n 1 -i test-src/cutedge-100-30.asp	1.57	0
+TIME-STATS	clingo -n 1 test-src/cutedge-100-30.asp	12.28	10
+TIME-STATS	java -jar Alpha-bundled.jar -n 1 -i test-src/cutedge-100-50.asp	2.21	0
+TIME-STATS	java -jar Alpha-bundled.jar -nse -n 1 -i test-src/cutedge-100-50.asp	2.09	0
+TIME-STATS	clingo -n 1 test-src/cutedge-100-50.asp	36.74	10
+TIME-STATS	java -jar Alpha-bundled.jar -n 1 -i test-src/locstrat-200.asp	3.24	0
+TIME-STATS	java -jar Alpha-bundled.jar -nse -n 1 -i test-src/locstrat-200.asp	3.18	0
+TIME-STATS	clingo -n 1 test-src/locstrat-200.asp	0.36	10
+TIME-STATS	java -jar Alpha-bundled.jar -n 1 -i test-src/locstrat-400.asp	10.48	0
+TIME-STATS	java -jar Alpha-bundled.jar -nse -n 1 -i test-src/locstrat-400.asp	10.42	0
+TIME-STATS	clingo -n 1 test-src/locstrat-400.asp	1.94	10
+TIME-STATS	java -jar Alpha-bundled.jar -n 1 -i test-src/reach-1.asp	2.55	0
+TIME-STATS	java -jar Alpha-bundled.jar -nse -n 1 -i test-src/reach-1.asp	2.82	0
+TIME-STATS	clingo -n 1 test-src/reach-1.asp	0.27	30
+TIME-STATS	java -jar Alpha-bundled.jar -n 1 -i test-src/reach-4.asp	34.41	0
+TIME-STATS	java -jar Alpha-bundled.jar -nse -n 1 -i test-src/reach-4.asp	91.13	1
+TIME-STATS	clingo -n 1 test-src/reach-4.asp	8.70	30

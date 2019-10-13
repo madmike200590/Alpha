@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -20,14 +21,17 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import at.ac.tuwien.kr.alpha.Util;
 import at.ac.tuwien.kr.alpha.common.Predicate;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.Literal;
 import at.ac.tuwien.kr.alpha.common.program.impl.InternalProgram;
 import at.ac.tuwien.kr.alpha.common.rule.impl.InternalRule;
+import at.ac.tuwien.kr.alpha.common.terms.ConstantTerm;
 import at.ac.tuwien.kr.alpha.common.terms.Term;
 import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
 import at.ac.tuwien.kr.alpha.grounder.AbstractGrounder;
+import at.ac.tuwien.kr.alpha.grounder.Substitution;
 
 /**
  * Experimental grounder for use in stratified evaluation outside of Alpha's main ground/solve loop. Does not extend {@link AbstractGrounder} for now because
@@ -55,6 +59,7 @@ public class DatabaseBackedGrounder implements Closeable {
 	private static final String INSTANCE_INSERT_TEMPLATE = "INSERT INTO %s (%s, create_time) VALUES (%s, ?)";
 
 	private final Map<Predicate, PreparedStatement> instanceInserts = new HashMap<>();
+	private final Map<Integer, RuleSqlMapper> ruleGroundingMappers = new HashMap<>();
 	private final Map<Integer, PreparedStatement> ruleGroundingSelects = new HashMap<>();
 
 	private InternalProgram program;
@@ -66,6 +71,33 @@ public class DatabaseBackedGrounder implements Closeable {
 		this.db = DatabaseBackedGrounder.createDatabase();
 		this.prepareTables();
 		this.prepareGroundingSelects();
+	}
+
+	public List<Substitution> groundRule(InternalRule rule) {
+		List<Substitution> retVal;
+		RuleSqlMapper mapper = this.ruleGroundingMappers.get(rule.getRuleId());
+		PreparedStatement stmt = this.ruleGroundingSelects.get(rule.getRuleId());
+		try {
+			ResultSet rs = stmt.executeQuery();
+			retVal = this.mapFromResultSet(rs, mapper);
+			rs.close();
+		} catch (SQLException ex) {
+			throw Util.oops("DatabaseBackedGrounder failed executing groundingSelect for rule " + rule.toString());
+		}
+		return retVal;
+	}
+
+	private List<Substitution> mapFromResultSet(ResultSet rs, RuleSqlMapper mapper) throws SQLException {
+		List<Substitution> retVal = new ArrayList<>();
+		Substitution subst;
+		while (rs.next()) {
+			subst = new Substitution();
+			for (VariableTerm var : mapper.variableToColumns.keySet()) {
+				subst.put(var, ConstantTerm.getInstance(rs.getString(var.getVariableName())));
+			}
+			retVal.add(subst);
+		}
+		return retVal;
 	}
 
 	private static Connection createDatabase() throws SQLException {
@@ -94,11 +126,12 @@ public class DatabaseBackedGrounder implements Closeable {
 		}
 	}
 
-	private void prepareGroundingSelects() {
-		String sql;
+	private void prepareGroundingSelects() throws SQLException {
+		RuleSqlMapper mapper;
 		for (InternalRule rule : this.program.getRules()) {
-			sql = new SqlGenerationHelper(rule).generateGroundingSelect();
-			LOGGER.debug("Rule = {}, SQL = {}", rule, sql);
+			mapper = new RuleSqlMapper(rule);
+			this.ruleGroundingMappers.put(rule.getRuleId(), mapper);
+			this.ruleGroundingSelects.put(rule.getRuleId(), this.db.prepareStatement(mapper.groundingSelect));
 		}
 	}
 
@@ -148,11 +181,11 @@ public class DatabaseBackedGrounder implements Closeable {
 		return Collections.unmodifiableMap(this.instanceInserts);
 	}
 
-	public Map<Integer, PreparedStatement> getRuleGroundingSelects() {
-		return Collections.unmodifiableMap(this.ruleGroundingSelects);
+	public Map<Integer, RuleSqlMapper> getRuleGroundingMappers() {
+		return Collections.unmodifiableMap(this.ruleGroundingMappers);
 	}
 
-	private class SqlGenerationHelper {
+	private class RuleSqlMapper {
 
 		private final InternalRule rule;
 
@@ -161,12 +194,15 @@ public class DatabaseBackedGrounder implements Closeable {
 		private final Map<VariableTerm, List<ImmutablePair<String, String>>> variableToColumns = new HashMap<>();
 		private final Map<Predicate, Integer> predicateOccurrences = new HashMap<>();
 
-		public SqlGenerationHelper(InternalRule rule) {
+		private final String groundingSelect;
+
+		private RuleSqlMapper(InternalRule rule) {
 			this.rule = rule;
 			this.generateMappings();
+			this.groundingSelect = this.generateGroundingSelect();
 		}
 
-		public String generateGroundingSelect() {
+		private String generateGroundingSelect() {
 			Set<VariableTerm> selectSet = this.variableToColumns.keySet();
 			List<String> fromTables = new ArrayList<>();
 			for (Atom a : this.rule.getBodyAtomsPositive()) {
