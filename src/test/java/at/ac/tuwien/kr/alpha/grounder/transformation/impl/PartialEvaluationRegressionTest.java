@@ -22,7 +22,7 @@ import at.ac.tuwien.kr.alpha.common.program.impl.AnalyzedProgram;
 import at.ac.tuwien.kr.alpha.common.program.impl.InputProgram;
 import at.ac.tuwien.kr.alpha.common.program.impl.InternalProgram;
 import at.ac.tuwien.kr.alpha.common.program.impl.NormalProgram;
-import at.ac.tuwien.kr.alpha.grounder.transformation.eval.PartialEvaluation;
+import at.ac.tuwien.kr.alpha.grounder.transformation.eval.StratifiedEvaluator;
 import at.ac.tuwien.kr.alpha.test.util.TestUtils;
 
 @RunWith(Parameterized.class)
@@ -113,7 +113,7 @@ public class PartialEvaluationRegressionTest {
 		InputProgram prg = system.readProgramString(aspStr);
 		NormalProgram normal = system.normalizeProgram(prg);
 		AnalyzedProgram analyzed = AnalyzedProgram.analyzeNormalProgram(normal);
-		InternalProgram evaluated = new PartialEvaluation().apply(analyzed);
+		InternalProgram evaluated = new StratifiedEvaluator().apply(analyzed);
 		this.programVerifier.accept(evaluated);
 		Set<AnswerSet> answerSets = system.solve(evaluated).collect(Collectors.toSet());
 		this.answerSetsVerifier.accept(answerSets);

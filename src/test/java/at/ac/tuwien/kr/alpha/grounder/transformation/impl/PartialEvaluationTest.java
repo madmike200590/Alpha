@@ -15,7 +15,7 @@ import at.ac.tuwien.kr.alpha.common.program.impl.AnalyzedProgram;
 import at.ac.tuwien.kr.alpha.common.program.impl.InputProgram;
 import at.ac.tuwien.kr.alpha.common.program.impl.InternalProgram;
 import at.ac.tuwien.kr.alpha.common.program.impl.NormalProgram;
-import at.ac.tuwien.kr.alpha.grounder.transformation.eval.PartialEvaluation;
+import at.ac.tuwien.kr.alpha.grounder.transformation.eval.StratifiedEvaluator;
 import at.ac.tuwien.kr.alpha.test.util.TestUtils;
 
 public class PartialEvaluationTest {
@@ -27,7 +27,7 @@ public class PartialEvaluationTest {
 		InputProgram prg = system.readProgramString(aspStr);
 		NormalProgram normal = system.normalizeProgram(prg);
 		AnalyzedProgram analyzed = AnalyzedProgram.analyzeNormalProgram(normal);
-		InternalProgram evaluated = new PartialEvaluation().apply(analyzed);
+		InternalProgram evaluated = new StratifiedEvaluator().apply(analyzed);
 		BasicAtom qOfB = BasicAtom.newInstance("q", "b");
 		List<Atom> facts = evaluated.getFacts();
 		int numQOfB = 0;
@@ -46,7 +46,7 @@ public class PartialEvaluationTest {
 		InputProgram prg = system.readProgramString(aspStr);
 		NormalProgram normal = system.normalizeProgram(prg);
 		AnalyzedProgram analyzed = AnalyzedProgram.analyzeNormalProgram(normal);
-		InternalProgram evaluated = new PartialEvaluation().apply(analyzed);
+		InternalProgram evaluated = new StratifiedEvaluator().apply(analyzed);
 		BasicAtom equal = BasicAtom.newInstance("equal");
 		Assert.assertTrue(evaluated.getFacts().contains(equal));
 	}
@@ -59,7 +59,7 @@ public class PartialEvaluationTest {
 		InputProgram prg = system.readProgramString(aspStr);
 		NormalProgram normal = system.normalizeProgram(prg);
 		AnalyzedProgram analyzed = AnalyzedProgram.analyzeNormalProgram(normal);
-		InternalProgram evaluated = new PartialEvaluation().apply(analyzed);
+		InternalProgram evaluated = new StratifiedEvaluator().apply(analyzed);
 		Set<AnswerSet> answerSets = system.solve(evaluated).collect(Collectors.toSet());
 		TestUtils.assertAnswerSetsEqual("a(1), a(2), a(3), b(1), c(2), d(3)", answerSets);
 	}
@@ -71,7 +71,7 @@ public class PartialEvaluationTest {
 		InputProgram prg = system.readProgramString(asp);
 		NormalProgram normal = system.normalizeProgram(prg);
 		AnalyzedProgram analyzed = AnalyzedProgram.analyzeNormalProgram(normal);
-		InternalProgram evaluated = new PartialEvaluation().apply(analyzed);
+		InternalProgram evaluated = new StratifiedEvaluator().apply(analyzed);
 		Set<AnswerSet> answerSets = system.solve(evaluated).collect(Collectors.toSet());
 		TestUtils.assertAnswerSetsEqual("p(a), q(a,b)", answerSets);
 	}

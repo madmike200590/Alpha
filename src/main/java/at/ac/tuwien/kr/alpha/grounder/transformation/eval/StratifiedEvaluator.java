@@ -57,9 +57,9 @@ import at.ac.tuwien.kr.alpha.solver.ThriceTruth;
  */
 // TODO ideally return "PartiallyEvaluatedProgram" here, grounder can use working memories created here rather than re-initialize everything
 // TODO add solved rules to internal program (in extra list)
-public class PartialEvaluation extends ProgramTransformation<AnalyzedProgram, InternalProgram> {
+public class StratifiedEvaluator extends ProgramTransformation<AnalyzedProgram, InternalProgram> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(PartialEvaluation.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(StratifiedEvaluator.class);
 
 	private StratificationHelper stratificationHelper = new StratificationHelper();
 
