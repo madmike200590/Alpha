@@ -26,9 +26,9 @@ import at.ac.tuwien.kr.alpha.grounder.transformation.eval.StratifiedEvaluator;
 import at.ac.tuwien.kr.alpha.test.util.TestUtils;
 
 @RunWith(Parameterized.class)
-public class PartialEvaluationRegressionTest {
+public class StratifiedEvaluatorRegressionTest {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(PartialEvaluationRegressionTest.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(StratifiedEvaluatorRegressionTest.class);
 
 	private static final String STRATIFIED_NEG_ASP = 
 			"base(X) :- req(X), not incomp(X).\n"
@@ -53,27 +53,27 @@ public class PartialEvaluationRegressionTest {
 	
 
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> BASIC_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramBasic, PartialEvaluationRegressionTest::verifyAnswerSetsBasic);
+			StratifiedEvaluatorRegressionTest::verifyProgramBasic, StratifiedEvaluatorRegressionTest::verifyAnswerSetsBasic);
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> BASIC_MULTI_INSTANCE_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramBasicMultiInstance, PartialEvaluationRegressionTest::verifyAnswerSetsBasicMultiInstance);
+			StratifiedEvaluatorRegressionTest::verifyProgramBasicMultiInstance, StratifiedEvaluatorRegressionTest::verifyAnswerSetsBasicMultiInstance);
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> BASIC_NEGATION_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramBasicNegation, PartialEvaluationRegressionTest::verifyAnswerSetsBasicNegation);
+			StratifiedEvaluatorRegressionTest::verifyProgramBasicNegation, StratifiedEvaluatorRegressionTest::verifyAnswerSetsBasicNegation);
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> PART_STRATIFIED_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramPartStratified, PartialEvaluationRegressionTest::verifyAnswerSetsPartStratified);
+			StratifiedEvaluatorRegressionTest::verifyProgramPartStratified, StratifiedEvaluatorRegressionTest::verifyAnswerSetsPartStratified);
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> POSITIVE_RECURSIVE_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramPositiveRecursive, PartialEvaluationRegressionTest::verifyAnswerSetsPositiveRecursive);
+			StratifiedEvaluatorRegressionTest::verifyProgramPositiveRecursive, StratifiedEvaluatorRegressionTest::verifyAnswerSetsPositiveRecursive);
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> EMPTY_PROG_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramEmptyProg, PartialEvaluationRegressionTest::verifyAnswerSetsEmptyProg);
+			StratifiedEvaluatorRegressionTest::verifyProgramEmptyProg, StratifiedEvaluatorRegressionTest::verifyAnswerSetsEmptyProg);
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> FACTS_ONLY_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramFactsOnly, PartialEvaluationRegressionTest::verifyAnswerSetsFactsOnly);
+			StratifiedEvaluatorRegressionTest::verifyProgramFactsOnly, StratifiedEvaluatorRegressionTest::verifyAnswerSetsFactsOnly);
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> STRATIFIED_NO_FACTS_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramStratNoFacts, PartialEvaluationRegressionTest::verifyAnswerSetsStratNoFacts);
+			StratifiedEvaluatorRegressionTest::verifyProgramStratNoFacts, StratifiedEvaluatorRegressionTest::verifyAnswerSetsStratNoFacts);
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> STRATIFIED_W_FACTS_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramStratWithFacts, PartialEvaluationRegressionTest::verifyAnswerSetsStratWithFacts);
+			StratifiedEvaluatorRegressionTest::verifyProgramStratWithFacts, StratifiedEvaluatorRegressionTest::verifyAnswerSetsStratWithFacts);
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> EQUALITY_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramEquality, PartialEvaluationRegressionTest::verifyAnswerSetsEquality);
+			StratifiedEvaluatorRegressionTest::verifyProgramEquality, StratifiedEvaluatorRegressionTest::verifyAnswerSetsEquality);
 	private static final ImmutablePair<Consumer<InternalProgram>, Consumer<Set<AnswerSet>>> EQUALITY_WITH_VAR_VERIFIERS = new ImmutablePair<>(
-			PartialEvaluationRegressionTest::verifyProgramEqualityWithVar, PartialEvaluationRegressionTest::verifyAnswerSetsEqualityWithVar);
+			StratifiedEvaluatorRegressionTest::verifyProgramEqualityWithVar, StratifiedEvaluatorRegressionTest::verifyAnswerSetsEqualityWithVar);
 	
 	
 	@Parameters(name = "Run {index}: aspString={0}, programVerifier={1}, answerSetsVerifier={2}")
@@ -100,7 +100,7 @@ public class PartialEvaluationRegressionTest {
 	private Consumer<InternalProgram> programVerifier;
 	private Consumer<Set<AnswerSet>> answerSetsVerifier;
 
-	public PartialEvaluationRegressionTest(String aspString, Consumer<InternalProgram> programVerifier, Consumer<Set<AnswerSet>> answerSetsVerifier) {
+	public StratifiedEvaluatorRegressionTest(String aspString, Consumer<InternalProgram> programVerifier, Consumer<Set<AnswerSet>> answerSetsVerifier) {
 		this.aspString = aspString;
 		this.programVerifier = programVerifier;
 		this.answerSetsVerifier = answerSetsVerifier;

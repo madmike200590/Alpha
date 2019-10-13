@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,14 +25,18 @@ import org.slf4j.LoggerFactory;
 import at.ac.tuwien.kr.alpha.Util;
 import at.ac.tuwien.kr.alpha.common.Predicate;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
+import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
 import at.ac.tuwien.kr.alpha.common.atoms.Literal;
+import at.ac.tuwien.kr.alpha.common.program.impl.AnalyzedProgram;
 import at.ac.tuwien.kr.alpha.common.program.impl.InternalProgram;
 import at.ac.tuwien.kr.alpha.common.rule.impl.InternalRule;
 import at.ac.tuwien.kr.alpha.common.terms.ConstantTerm;
 import at.ac.tuwien.kr.alpha.common.terms.Term;
 import at.ac.tuwien.kr.alpha.common.terms.VariableTerm;
 import at.ac.tuwien.kr.alpha.grounder.AbstractGrounder;
+import at.ac.tuwien.kr.alpha.grounder.Instance;
 import at.ac.tuwien.kr.alpha.grounder.Substitution;
+import at.ac.tuwien.kr.alpha.grounder.transformation.eval.AbstractStratifiedEvaluator;
 
 /**
  * Experimental grounder for use in stratified evaluation outside of Alpha's main ground/solve loop. Does not extend {@link AbstractGrounder} for now because
@@ -39,7 +44,7 @@ import at.ac.tuwien.kr.alpha.grounder.Substitution;
  * 
  * Copyright (c) 2019, the Alpha Team.
  */
-public class DatabaseBackedGrounder implements Closeable {
+public class DatabaseBackedGrounder extends AbstractStratifiedEvaluator implements Closeable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseBackedGrounder.class);
 
@@ -67,10 +72,114 @@ public class DatabaseBackedGrounder implements Closeable {
 	private Connection db;
 
 	public DatabaseBackedGrounder(InternalProgram program) throws SQLException {
+		this.initialize(program);
+	}
+
+	public DatabaseBackedGrounder() {
+	}
+
+	private void initialize(InternalProgram program) throws SQLException {
 		this.program = program;
 		this.db = DatabaseBackedGrounder.createDatabase();
 		this.prepareTables();
 		this.prepareGroundingSelects();
+		Set<Instance> facts;
+		PreparedStatement insert;
+		for (Map.Entry<Predicate, LinkedHashSet<Instance>> entry : program.getFactsByPredicate().entrySet()) {
+			facts = entry.getValue();
+			insert = this.instanceInserts.get(entry.getKey());
+			for (Instance fact : facts) {
+				this.insertFact(fact, insert);
+			}
+		}
+	}
+
+	private void insertFact(Instance fact, PreparedStatement stmt) throws SQLException {
+		int colNum = 1;
+		for (Term t : fact.terms) {
+			stmt.setString(colNum, t.toString()); // TODO using toString could cause problems if t is no ConstantTerm
+			colNum++;
+		}
+		// now set ctime
+		stmt.setInt(colNum, -1);
+		stmt.execute();
+	}
+
+	@Override
+	protected void initializeWorkingMemory(AnalyzedProgram program) {
+		try {
+			this.initialize(program);
+		} catch (SQLException ex) {
+			LOGGER.error("SQLException while initializing DatabaseBackedGrounder", ex);
+			throw Util.oops("SQLException while initializing DatabaseBackedGrounder");
+		}
+	}
+
+	@Override
+	protected int evaluateRules(Set<InternalRule> rules) {
+		int retVal = 0;
+		for (InternalRule rule : rules) {
+			retVal += this.evaluateRule(rule);
+		}
+		return retVal;
+	}
+
+	@Override
+	protected int evaluateRule(InternalRule rule) {
+		int retVal = 0;
+		List<Substitution> groundSubstitutions = this.groundRule(rule);
+		for (Substitution subst : groundSubstitutions) {
+			if (this.canFire(rule, subst)) {
+				this.fireRule(rule, subst);
+				retVal++;
+			}
+		}
+		return retVal;
+	}
+
+	private boolean canFire(InternalRule rule, Substitution subst) {
+		return true;
+	}
+
+	/**
+	 * Inserts the instance of the rule's head atom that results from firing into the corresponding instance table
+	 * 
+	 * @param rule
+	 * @param subst
+	 */
+	private void fireRule(InternalRule rule, Substitution subst) {
+		Atom newAtom = rule.getHeadAtom().substitute(subst);
+		PreparedStatement stmt = this.instanceInserts.get(newAtom.getPredicate());
+		try {
+			this.insertFact(new Instance(newAtom.getTerms()), stmt);
+		} catch (SQLException ex) {
+			LOGGER.error("Failed to insert newly derived head atom " + newAtom, ex);
+			throw Util.oops("Failed to insert newly derived head atom " + newAtom);
+		}
+	}
+
+	@Override
+	protected List<Atom> buildOutputFacts() { // TODO rather than dumping everything from DB, just get those facts that weren't there at the start
+		List<Atom> retVal = new ArrayList<>();
+		ResultSet rs;
+		List<Term> terms;
+		try {
+			for (Predicate p : this.instanceInserts.keySet()) {
+				rs = this.db.createStatement().executeQuery("select * from " + p.getName());
+				while (rs.next()) {
+					terms = new ArrayList<>();
+					for (int i = 1; i <= p.getArity(); i++) {
+						// TODO what if we aren't supposed to have symbolic instances here??
+						terms.add(ConstantTerm.getSymbolicInstance(rs.getString(i)));
+					}
+					retVal.add(new BasicAtom(p, terms));
+				}
+			}
+		} catch (SQLException ex) {
+			LOGGER.error("Failed fetching facts after grounding", ex);
+			throw Util.oops("Failed fetching facts after grounding");
+		}
+		return retVal;
 	}
 
 	public List<Substitution> groundRule(InternalRule rule) {
@@ -93,7 +202,7 @@ public class DatabaseBackedGrounder implements Closeable {
 		while (rs.next()) {
 			subst = new Substitution();
 			for (VariableTerm var : mapper.variableToColumns.keySet()) {
-				subst.put(var, ConstantTerm.getInstance(rs.getString(var.getVariableName())));
+				subst.put(var, ConstantTerm.getSymbolicInstance(rs.getString(var.getVariableName())));
 			}
 			retVal.add(subst);
 		}
@@ -107,6 +216,7 @@ public class DatabaseBackedGrounder implements Closeable {
 			throw new RuntimeException("Failed loading H2 JDBC driver!");
 		}
 		return DriverManager.getConnection(H2DB_URL);
+		// return DriverManager.getConnection("jdbc:h2:tcp://localhost/~/alpha-sql-grounding", "admin", "");
 	}
 
 	private void prepareTables() throws SQLException {
@@ -129,6 +239,7 @@ public class DatabaseBackedGrounder implements Closeable {
 	private void prepareGroundingSelects() throws SQLException {
 		RuleSqlMapper mapper;
 		for (InternalRule rule : this.program.getRules()) {
+			LOGGER.debug("Creating grounding select for rule {}", rule);
 			mapper = new RuleSqlMapper(rule);
 			this.ruleGroundingMappers.put(rule.getRuleId(), mapper);
 			this.ruleGroundingSelects.put(rule.getRuleId(), this.db.prepareStatement(mapper.groundingSelect));
@@ -158,7 +269,7 @@ public class DatabaseBackedGrounder implements Closeable {
 	private String createColumnNames(Predicate pred) {
 		String[] cols = new String[pred.getArity()];
 		for (int i = 0; i < pred.getArity(); i++) {
-			cols[i] = "t_" + i;
+			cols[i] = "t_" + (i + 1);
 		}
 		return StringUtils.join(cols, ",");
 	}
@@ -166,7 +277,7 @@ public class DatabaseBackedGrounder implements Closeable {
 	private String createColumnDefinitions(Predicate pred) {
 		String[] cols = new String[pred.getArity()];
 		for (int i = 0; i < pred.getArity(); i++) {
-			cols[i] = String.format(TERM_COLUMN_TEMPLATE, "t_" + i);
+			cols[i] = String.format(TERM_COLUMN_TEMPLATE, "t_" + (i + 1));
 		}
 		return StringUtils.join(cols, ",");
 	}
@@ -190,6 +301,7 @@ public class DatabaseBackedGrounder implements Closeable {
 		private final InternalRule rule;
 
 		private final Map<Atom, String> atomToTableAlias = new HashMap<>();
+		private final Map<VariableTerm, ImmutablePair<String, String>> headTableColumns = new HashMap<>();
 		private final Map<Atom, Map<Term, ImmutablePair<String, String>>> termToColumnAlias = new HashMap<>();
 		private final Map<VariableTerm, List<ImmutablePair<String, String>>> variableToColumns = new HashMap<>();
 		private final Map<Predicate, Integer> predicateOccurrences = new HashMap<>();
@@ -232,6 +344,36 @@ public class DatabaseBackedGrounder implements Closeable {
 				}
 				bld.append(StringUtils.join(joinExprs, " and "));
 			}
+			bld.append(joins.isEmpty() ? " where " : " and ");
+			bld.append("not exists (").append(this.renderOnlyNewInstancesSubselect()).append(")");
+			return bld.toString();
+		}
+
+		/**
+		 * Creates a subselect that is added to the grounding select in oder to only select previously non-existing instances. Select structure is "select 0
+		 * from HEAD_ATOM where TERMS..."
+		 * 
+		 * @param selectCols the columns that are selected by the toplevel select
+		 * @return
+		 */
+		private String renderOnlyNewInstancesSubselect() {
+			StringBuilder bld = new StringBuilder("select 0 from ");
+			String table = this.rule.getHeadAtom().getPredicate().getName() + " " + this.atomToTableAlias.get(this.rule.getHeadAtom());
+			bld.append(table);
+			bld.append(" where ");
+			VariableTerm var;
+			String checkedColName;
+			String selectedColName;
+			ImmutablePair<String, String> selectedColMapping;
+			List<String> whereExprs = new ArrayList<>();
+			for (Map.Entry<VariableTerm, ImmutablePair<String, String>> headVarEntry : this.headTableColumns.entrySet()) {
+				var = headVarEntry.getKey();
+				checkedColName = headVarEntry.getValue().right;
+				selectedColMapping = this.variableToColumns.get(var).get(0);
+				selectedColName = selectedColMapping.left + "." + selectedColMapping.right;
+				whereExprs.add(checkedColName + " = " + selectedColName);
+			}
+			bld.append(StringUtils.join(whereExprs, " and "));
 			return bld.toString();
 		}
 
@@ -257,14 +399,14 @@ public class DatabaseBackedGrounder implements Closeable {
 		private void generateMappings() {
 			// map head atom to a table
 			Atom head = this.rule.getHeadAtom();
-			this.generateMappingsForAtom(head, false);
+			this.generateMappingsForAtom(head, true);
 			// map body atoms to tables
 			for (Literal lit : this.rule.getBody()) {
-				this.generateMappingsForAtom(lit.getAtom(), true);
+				this.generateMappingsForAtom(lit.getAtom(), false);
 			}
 		}
 
-		private void generateMappingsForAtom(Atom atom, boolean performVariableMapping) {
+		private void generateMappingsForAtom(Atom atom, boolean isHeadAtom) {
 			this.registerPredicateOccurrence(atom.getPredicate());
 			String tableAlias = this.generateTableAlias(atom.getPredicate());
 			this.atomToTableAlias.put(atom, tableAlias);
@@ -277,9 +419,13 @@ public class DatabaseBackedGrounder implements Closeable {
 				column = "t_" + termPosition;
 				columnMapping = new ImmutablePair<>(tableAlias, column);
 				termsToColumns.put(t, columnMapping);
-				if (t instanceof VariableTerm && performVariableMapping) {
-					// only do the variableMapping for non-head atoms
-					this.registerVariableMapping((VariableTerm) t, columnMapping);
+				if (t instanceof VariableTerm) {
+					if (isHeadAtom) {
+						this.headTableColumns.put((VariableTerm) t, columnMapping);
+					} else {
+						// only do the variableMapping for non-head atoms
+						this.registerVariableMapping((VariableTerm) t, columnMapping);
+					}
 				}
 				termPosition++;
 			}
