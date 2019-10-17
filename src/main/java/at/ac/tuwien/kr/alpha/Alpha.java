@@ -58,6 +58,7 @@ import at.ac.tuwien.kr.alpha.config.SystemConfig;
 import at.ac.tuwien.kr.alpha.grounder.Grounder;
 import at.ac.tuwien.kr.alpha.grounder.GrounderFactory;
 import at.ac.tuwien.kr.alpha.grounder.parser.ProgramParser;
+import at.ac.tuwien.kr.alpha.grounder.sql.DatabaseBackedGrounder;
 import at.ac.tuwien.kr.alpha.grounder.transformation.eval.StratifiedEvaluator;
 import at.ac.tuwien.kr.alpha.grounder.transformation.impl.NormalizeProgramTransformation;
 import at.ac.tuwien.kr.alpha.solver.Solver;
@@ -109,7 +110,8 @@ public class Alpha {
 		InternalProgram retVal = program;
 		if (this.config.isEvaluateStratifiedPart()) {
 			AnalyzedProgram analyzed = new AnalyzedProgram(program.getRules(), program.getFacts());
-			retVal = new StratifiedEvaluator().apply(analyzed);
+			// retVal = new StratifiedEvaluator().apply(program);
+			retVal = new DatabaseBackedGrounder().apply(analyzed);
 		}
 		return retVal;
 	}
@@ -118,7 +120,8 @@ public class Alpha {
 		LOGGER.info("Preprocessing AnalyzedProgram!");
 		InternalProgram retVal = program;
 		if (this.config.isEvaluateStratifiedPart()) {
-			retVal = new StratifiedEvaluator().apply(program);
+			// retVal = new StratifiedEvaluator().apply(program);
+			retVal = new DatabaseBackedGrounder().apply(program);
 		}
 		return retVal;
 	}

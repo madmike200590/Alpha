@@ -61,7 +61,7 @@ public class DatabaseBackedGrounder extends AbstractStratifiedEvaluator implemen
 	private static final String INSTANCE_TABLE_CREATE_IDX_TEMPLATE = "CREATE INDEX %s_ctime_idx ON %s(create_time)";
 	private static final String INSTANCE_TABLE_PRIMARY_KEY_TEMPLATE = "ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY(%s)";
 
-	private static final String INSTANCE_INSERT_TEMPLATE = "INSERT INTO %s (%s, create_time) VALUES (%s, ?)";
+	private static final String INSTANCE_INSERT_TEMPLATE = "MERGE INTO %s (%s, create_time) VALUES (%s, ?)";
 
 	private final Map<Predicate, PreparedStatement> instanceInserts = new HashMap<>();
 	private final Map<Integer, RuleSqlMapper> ruleGroundingMappers = new HashMap<>();
@@ -239,6 +239,9 @@ public class DatabaseBackedGrounder extends AbstractStratifiedEvaluator implemen
 	private void prepareGroundingSelects() throws SQLException {
 		RuleSqlMapper mapper;
 		for (InternalRule rule : this.program.getRules()) {
+			if(rule.isConstraint()) {
+				continue; // FIXME only look at rules that are actually going to be needed!
+			}
 			LOGGER.debug("Creating grounding select for rule {}", rule);
 			mapper = new RuleSqlMapper(rule);
 			this.ruleGroundingMappers.put(rule.getRuleId(), mapper);
