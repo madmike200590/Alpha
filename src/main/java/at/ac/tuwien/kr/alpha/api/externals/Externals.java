@@ -25,6 +25,18 @@
  */
 package at.ac.tuwien.kr.alpha.api.externals;
 
+import org.reflections.Reflections;
+import org.reflections.scanners.MethodAnnotationsScanner;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import at.ac.tuwien.kr.alpha.api.externals.stdlib.AspStandardLibrary;
 import at.ac.tuwien.kr.alpha.common.atoms.Atom;
 import at.ac.tuwien.kr.alpha.common.atoms.BasicAtom;
@@ -37,17 +49,6 @@ import at.ac.tuwien.kr.alpha.common.fixedinterpretations.PredicateInterpretation
 import at.ac.tuwien.kr.alpha.common.fixedinterpretations.SuppliedPredicateInterpretation;
 import at.ac.tuwien.kr.alpha.common.fixedinterpretations.UnaryPredicateInterpretation;
 import at.ac.tuwien.kr.alpha.common.terms.ConstantTerm;
-import org.reflections.Reflections;
-import org.reflections.scanners.MethodAnnotationsScanner;
-
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public final class Externals {
 
@@ -105,7 +106,7 @@ public final class Externals {
 			return new BindingMethodPredicateInterpretation(method);
 		}
 
-		throw new IllegalArgumentException("Passed method has unexpected return type. Should be either boolean or start with "
+		throw new IllegalArgumentException("Passed method " + method.getName() + " has unexpected return type. Should be either boolean or start with "
 				+ PredicateInterpretation.EVALUATE_RETURN_TYPE_NAME_PREFIX + ".");
 	}
 
